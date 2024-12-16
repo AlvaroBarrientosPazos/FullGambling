@@ -240,12 +240,12 @@ public class UsuariosBD {
 
                 if (loginOk) {
                     User user = new User( results.getInt(UsuariosBD.USER_TABLE.ID.getValue()), userName, results.getInt(UsuariosBD.USER_TABLE.CHIPS.getValue()) );
-                    user.populateFriendList();
+                    //TODO: implementar una funcion que llene la array de amigos del usuario que se acaba de logear.
+                    //user.populateFriendList();
     
                     results.close();
                     statement.close();
                     conexion.close();
-    
                     return user;
                 } 
                 else {
@@ -330,26 +330,29 @@ public class UsuariosBD {
 
             if (user.hasFriend(userFriend)){
                 System.out.println("Ya tienes agregado al usuario: "+friendUserName);
+                return null;
             }
             else{
                 Connection conexion = Conexion.conectar();
                 PreparedStatement statement = null;
-                //ResultSet results = null;
 
                 try {
                     String query = "INSERT INTO friendships (user_id1,user_id2) VALUES (?, ?)";
                     
                     statement = conexion.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
-                    statement.setInt(1, user.getID());
-                    statement.setInt(2, userFriend.getID());
                     
-                    statement.executeUpdate();
-        
-                    /*results = statement.getGeneratedKeys();
-
-                    if (results.next() == false){
-                        System.out.println("Error");                    
-                    }*/
+                    if (user.getID() < userFriend.getID()){
+                        statement.setInt(1, user.getID());    
+                        statement.setInt(2, userFriend.getID());
+                    }
+                    else{
+                        statement.setInt(1, userFriend.getID());    
+                        statement.setInt(2, user.getID());
+                    }
+                    
+                    if (statement.executeUpdate() == 1){
+                        user.appendFriend(userFriend);
+                    }
         
                 } 
                 catch (SQLException e) {

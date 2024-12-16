@@ -4,7 +4,7 @@ public class User {
 
     private int id;
     private String name, alias;
-    private User[] friends = new User[0];
+    private User[] friends = new User[0]; //No se cargan los amigos de los amigos del usuario actual.
     
     private int chips;
 
@@ -69,7 +69,7 @@ public class User {
     public boolean hasFriend(User userFriend){
         
         for (User friend : friends) {
-            if (friend.equals(userFriend)) {
+            if (friend.getID() == userFriend.getID()) {
                 return true;
             }
         }
@@ -77,8 +77,23 @@ public class User {
 
     }
 
+    public void appendFriend(User userFriend){
+        User[] newFriends = new User[friends.length + 1];
+        System.arraycopy(friends, 0, newFriends, 0, friends.length);
+
+        newFriends[newFriends.length -1] = userFriend;
+
+        friends = newFriends;
+        displayFriends();
+    }
+
+
     public void displayFriends(){
-        System.out.println(friends);
+
+        for (int i = 0; i < friends.length; i++){
+
+            System.out.println((i+1)+". "+friends[i].getUserName());
+        }
     }
 
 }

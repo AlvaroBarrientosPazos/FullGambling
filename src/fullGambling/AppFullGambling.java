@@ -229,13 +229,12 @@ public class AppFullGambling {
 
         User[] userFriends = currUser.getFriends();
 
+        
         if (userFriends.length == 0){
             System.out.println("\nAún no has añadido a ningún usuario a tu lista de amigos");
         }
-
-        for (int i = 0; i < userFriends.length; i++){
-
-            System.out.println("1. "+userFriends[i]);
+        else{
+            currUser.displayFriends();
         }
 
         do {
