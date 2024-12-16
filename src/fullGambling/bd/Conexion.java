@@ -2,6 +2,8 @@ package fullGambling.bd;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 class Conexion {
@@ -41,6 +43,44 @@ class Conexion {
 
         return con;
     }
+
+    public static void closeConnection(Connection conexion, PreparedStatement statement) {
+        try {
+            if (conexion != null) {
+                conexion.close();
+            }
+
+            if (statement != null) {
+                statement.close();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    
+    public static void closeConnection(Connection conexion, PreparedStatement statement, ResultSet results) {
+        try {
+            if (conexion != null) {
+                conexion.close();
+            }
+
+            if (statement != null) {
+                statement.close();
+            }
+
+            if (results != null) {
+                results.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
 }
 
 

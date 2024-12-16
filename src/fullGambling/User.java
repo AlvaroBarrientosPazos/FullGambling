@@ -12,6 +12,8 @@ public class User {
     private int wins;
     private int wRatio;
 
+    private boolean isAdmin = false;
+
     public User(){
         id = -1;
         name = "voidUser";
@@ -24,13 +26,14 @@ public class User {
         name = userName;
     }
 
-    public User( int userID, String userName, int userChips){
+    public User( int userID, String userName, int userChips, boolean userPermissions){
         this(userID, userName);
         chips = userChips;
+        isAdmin = userPermissions;
     }
 
-    public User( int userID, String userName, int userChips, User[] userFriends ){
-        this(userID, userName, userChips);
+    public User( int userID, String userName, int userChips, boolean userPermissions, User[] userFriends ){
+        this(userID, userName, userChips,userPermissions);
         friends = userFriends;
     }
 
@@ -50,6 +53,10 @@ public class User {
         return chips;
     }
 
+    public void setChips(int quantity){
+        chips = quantity;
+    }
+
     public int getWins(){
         return wins;
     }
@@ -66,6 +73,10 @@ public class User {
         return friends;
     }
 
+    public void setFriends(User[] userFriends){
+        friends = userFriends;
+    }
+
     public boolean hasFriend(User userFriend){
         
         for (User friend : friends) {
@@ -77,6 +88,10 @@ public class User {
 
     }
 
+    public boolean hasAdminPermissions(){
+        return isAdmin;
+    }
+
     public void appendFriend(User userFriend){
         User[] newFriends = new User[friends.length + 1];
         System.arraycopy(friends, 0, newFriends, 0, friends.length);
@@ -84,7 +99,6 @@ public class User {
         newFriends[newFriends.length -1] = userFriend;
 
         friends = newFriends;
-        displayFriends();
     }
 
 
