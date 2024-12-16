@@ -3,8 +3,8 @@ package fullGambling;
 public class User {
 
     private int id;
-    private String userName, alias;
-    private Friend[] friends;
+    private String name, alias;
+    private User[] friends = new User[0];
     
     private int chips;
 
@@ -14,28 +14,32 @@ public class User {
 
     public User(){
         id = -1;
-        userName = "voidUser";
+        name = "voidUser";
         alias = "User0";
         chips = 0;
     }
 
     public User( int userID, String userName){
         id = userID;
-        userName = userName;
+        name = userName;
     }
 
     public User( int userID, String userName, int userChips){
-        this();
+        this(userID, userName);
         chips = userChips;
     }
 
-    public User( int userID, String userName, int userChips, Friend[] userFriends ){
+    public User( int userID, String userName, int userChips, User[] userFriends ){
         this(userID, userName, userChips);
         friends = userFriends;
     }
 
+    public int getID(){
+        return id;
+    }
+
     public String getUserName(){
-        return userName;
+        return name;
     }
 
     public String getAlias(){
@@ -50,8 +54,27 @@ public class User {
         return wins;
     }
 
+    public void setAlias(String userAlias){
+        alias = userAlias;
+    }
+
     public int getMatchesPlayed(){
         return matchesPlayed;
+    }
+
+    public User[] getFriends(){
+        return friends;
+    }
+
+    public boolean hasFriend(User userFriend){
+        
+        for (User friend : friends) {
+            if (friend.equals(userFriend)) {
+                return true;
+            }
+        }
+        return false;
+
     }
 
     public void displayFriends(){

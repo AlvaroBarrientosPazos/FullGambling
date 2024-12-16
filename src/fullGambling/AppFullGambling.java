@@ -10,6 +10,14 @@ public class AppFullGambling {
     private static Scanner sc = new Scanner(System.in);;
     private static User currUser;
 
+    enum MENU_ID{
+        START_MENU,
+        USER_MENU,
+        FRIENDS_MENU,
+        PROFILE_MENU,
+    }
+
+
     public static void main(String[] args) {
         System.out.println("***************************");
         System.out.println("**  Full Gambling v.0.1  **");
@@ -65,39 +73,46 @@ public class AppFullGambling {
             System.out.println("Usuario: " + currUser.getUserName() + "\n");
             System.out.println("1. Jugar");
             System.out.println("2. Comprar fichas");
-            System.out.println("3. Lista de Amigos");
+            System.out.println("3. Amigos");
             System.out.println("4. Confirgurar Perfil");
-            System.out.println("0. SALIR");
+            System.out.println("0. Cerrar Sesión");
             selectedIndex = sc.nextInt();
             sc.nextLine();
 
+            System.out.println();
+
             switch (selectedIndex) {
                 case 1:
+                    //sc.close();
                     System.out.println("Jugando...");
                     // publicarViaje(userName);
-                    break;
+                    return;
 
                 case 2:
+                    //sc.close();
                     System.out.println("Comprando...");
                     chipsShop();
                     // solicitarAsiento(userName);
-                    break;
+                    return;
 
                 case 3:
+                    //sc.close();
                     System.out.println("Lista de amigos...");
-                    currUser.displayFriends();
+                    friendsMenu();
                     // solicitarAsiento(userName);
-                    break;
+                    return;
 
                 case 4:
+                    //sc.close();
                     System.out.println("Configurando Perfil...");
                     UserConfig();
                     // solicitarAsiento(userName);
-                    break;
+                    return;
 
                 case 0:
+                    //sc.close();
                     System.out.println("Hasta pronto");
-                    break;
+                    return;
 
                 default:
                     System.out.println("Opción invalida");
@@ -115,7 +130,7 @@ public class AppFullGambling {
         System.out.println("Nº Chips: " + currUser.getChips() + "\n");
         System.out.println("1. Comprar");
         System.out.println("2. Retirar");
-        System.out.println("0. SALIR");
+        System.out.println("0. Volver Atrás");
     }
 
     private static void publicarViaje(String usuario) {
@@ -164,9 +179,11 @@ public class AppFullGambling {
             System.out.println("2. Comprar fichas");
             System.out.println("3. Lista de Amigos");
             System.out.println("4. Confirgurar Perfil");
-            System.out.println("0. SALIR");
+            System.out.println("0. Volver Atrás");
             selectedIndex = sc.nextInt();
             sc.nextLine();
+
+            System.out.println();
 
             switch (selectedIndex) {
                 case 1:
@@ -182,6 +199,7 @@ public class AppFullGambling {
 
                 case 3:
                     System.out.println("Lista de amigos...");
+                    friendsMenu();
                     currUser.displayFriends();
                     // solicitarAsiento(userName);
                     break;
@@ -201,4 +219,75 @@ public class AppFullGambling {
         } while (selectedIndex != 0);
     }
 
+
+    private static void friendsMenu(){
+        System.out.println("************");
+        System.out.println("** Amigos **");
+        System.out.println("************");
+
+        int selectedIndex;
+
+        User[] userFriends = currUser.getFriends();
+
+        if (userFriends.length == 0){
+            System.out.println("\nAún no has añadido a ningún usuario a tu lista de amigos");
+        }
+
+        for (int i = 0; i < userFriends.length; i++){
+
+            System.out.println("1. "+userFriends[i]);
+        }
+
+        do {
+            System.out.println("\n1. Añadir Amigo");
+            System.out.println("2. Borrar Amigo");
+            System.out.println("0. Volver Atrás");
+            selectedIndex = sc.nextInt();
+            sc.nextLine();
+
+            System.out.println();
+
+            switch (selectedIndex) {
+                case 1:
+                    System.out.println("Añadiendo Amigo...");
+                    friendRequest();
+                    break;
+
+                case 2:
+                    System.out.println("Borrando Amigo...");
+                    break;
+
+                case 0:
+                    System.out.println("Volviendo...");
+                    return;
+            
+                default:
+                    break;
+            }
+
+        } while(selectedIndex!=0);
+
+    }
+
+
+    private static void friendRequest(){
+        System.out.print("Nombre del usuario: ");
+        
+        String friendName = sc.nextLine(); // Se usa para imprimir el nombre del usuario introducido aunq no exista.
+        User friendUser = UsuariosBD.addFriend(currUser,friendName);
+        
+        if (friendUser != null){
+            System.out.println("Has agregado a "+friendUser.getUserName()+" a tu lista de amigos");
+        }
+        else{
+            System.out.println("El usuario "+friendName+" no existe");
+        }
+
+
+    }
+
+
 }
+
+
+

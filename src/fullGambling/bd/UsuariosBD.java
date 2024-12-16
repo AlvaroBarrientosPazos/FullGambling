@@ -14,37 +14,58 @@ import fullGambling.User;
 
 public class UsuariosBD {
 
-    static final String DB_TABLE_NAME = "user";
+    enum USER_TABLE{
+        ID(1),
+        USER_NAME(2),
+        PASSWORD(3),
+        CREATED_AT(4),
+        CHIPS(5);
+
+        private final int value;
+
+        USER_TABLE(int value) {
+            this.value = value;
+        }
+    
+        public int getValue() {
+            return value;
+        }
+
+    }
+
+    static final String USERS_TABLE_NAME = "user";
 
     /**
      * Lista los usuarios de la base de datos
      */
     public static void listarUsuarios() {
         Connection conexion = Conexion.conectar();
+        ResultSet results = null;
+        PreparedStatement statement = null;
 
-        Statement sentencia;
         try {
-            sentencia = conexion.createStatement();
+            statement = conexion.prepareStatement("SELECT * FROM " + USERS_TABLE_NAME);
+            results = statement.executeQuery();
 
-            ResultSet resultado = sentencia.executeQuery("SELECT * FROM user");
+            int id, chips;
+            String username;
+            Timestamp createdAt;
 
-            while (resultado.next()) {
-                // Procesa los datos
-                int id = resultado.getInt("id");
-                String username = resultado.getString("username");
-                //String password = resultado.getString("password");
-                Timestamp createdAt = resultado.getTimestamp("created_at");
+            while (results.next()) {
+                id = results.getInt(USER_TABLE.ID.getValue());
+                username = results.getString(USER_TABLE.USER_NAME.getValue());
+                createdAt = results.getTimestamp(USER_TABLE.CREATED_AT.getValue());
+                chips = results.getInt(USER_TABLE.CHIPS.getValue());
 
-                // Procesa los datos
                 System.out.println(
-                        "ID: " + id + ", username: " + username + ", createdAt: " + createdAt);
+                        "ID: " + id + ", username: " + username + ", createdAt: " + createdAt + " chips: "+chips);
             }
 
-            resultado.close();
-            sentencia.close();
-            conexion.close();
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+        finally{
+            closeConnection(conexion, statement, results);
         }
     }
 
@@ -58,62 +79,64 @@ public class UsuariosBD {
     public static boolean loginUsuario(String username, String password) {
         boolean loginOk = false;
         Connection conexion = Conexion.conectar();
+        PreparedStatement statement = null;
+        ResultSet results = null;
 
         try {
-            PreparedStatement statement = conexion.prepareStatement("SELECT * FROM " + DB_TABLE_NAME + " WHERE username COLLATE utf8mb4_bin = ?");
+            statement = conexion.prepareStatement("SELECT * FROM " + USERS_TABLE_NAME + " WHERE username COLLATE utf8mb4_bin = ?");
             statement.setString(1, username);
             
-            ResultSet resultado = statement.executeQuery();
+            results = statement.executeQuery();
 
 
-            if (resultado.next()) {
+            if (results.next()) {
                 // Si existe el usuario valida la contraseña con BCrypt
-                byte[] passwordHashed = resultado.getString("password").getBytes(StandardCharsets.UTF_8);
+                byte[] passwordHashed = results.getString(UsuariosBD.USER_TABLE.PASSWORD.getValue()).getBytes(StandardCharsets.UTF_8);
                 BCrypt.Result resultStrict = BCrypt.verifyer(BCrypt.Version.VERSION_2Y).verifyStrict(
                         password.getBytes(StandardCharsets.UTF_8),
                         passwordHashed);
                 loginOk = resultStrict.verified;
-                loginOk = validarHash2Y(password, resultado.getString("password"));
+                loginOk = validarHash2Y(password, results.getString(UsuariosBD.USER_TABLE.PASSWORD.getValue()));
                 
             }
 
-            resultado.close();
-            statement.close();
-            conexion.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        finally{
+            closeConnection(conexion, statement, results );
+        }
+        
         return loginOk;
     }
 
 
     private static boolean hasUser( String username ){
         Connection conexion = Conexion.conectar();
-        Statement sentencia;
+        PreparedStatement statement = null;
+        ResultSet results = null;
+
+        boolean hasUser = false;
 
         try {
-            PreparedStatement statement = conexion.prepareStatement("SELECT * FROM " + DB_TABLE_NAME + " WHERE username COLLATE utf8mb4_bin = ?");
+            statement = conexion.prepareStatement("SELECT * FROM " + USERS_TABLE_NAME + " WHERE username COLLATE utf8mb4_bin = ?");
             statement.setString(1, username);
             
-            ResultSet resultado = statement.executeQuery();
+            results = statement.executeQuery();
 
-            if ( resultado.next() ){
-                statement.close();
-                conexion.close();
-                resultado.close();
-                return true;
+            if ( results.next() ){
+                hasUser = true;
             }
-
-            statement.close();
-            conexion.close();
-            resultado.close();
 
         }
         catch (SQLException e){
             e.printStackTrace();
         }
+        finally{
+            closeConnection(conexion, statement, results);
+        }
 
-        return false;
+        return hasUser;
             
     }
 
@@ -127,23 +150,25 @@ public class UsuariosBD {
     public static boolean cambiarPassword(String username, String password) {
         boolean cambiarPassword = false;
         Connection conexion = Conexion.conectar();
+        PreparedStatement statement = null;
 
-        Statement sentencia;
         try {
-            sentencia = conexion.createStatement();
-            int resultado = sentencia.executeUpdate("UPDATE user SET password='" + generarStringHash2Y(password)
-                    + "' WHERE username LIKE '" + username + "'");
+            statement = conexion.prepareStatement("UPDATE "+USERS_TABLE_NAME+" SET password = ? WHERE username LIKE ?");
+            statement.setString(1, generarStringHash2Y(password));
+            statement.setString(2, username);
 
-            if (resultado == 1) {
-                // Si se cambió la contraseña
+            if (statement.executeUpdate() == 1) {
                 cambiarPassword = true;
             }
 
-            sentencia.close();
-            conexion.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        finally{
+            closeConnection(conexion, statement);
+        }
+
+
         return cambiarPassword;
     }
 
@@ -196,7 +221,7 @@ public class UsuariosBD {
             PreparedStatement statement;
     
             try {
-                statement = conexion.prepareStatement("SELECT * FROM " + DB_TABLE_NAME + " WHERE username COLLATE utf8mb4_bin = ?");
+                statement = conexion.prepareStatement("SELECT * FROM " + USERS_TABLE_NAME + " WHERE username COLLATE utf8mb4_bin = ?");
                 statement.setString(1, userName);
                 
                 results = statement.executeQuery();
@@ -204,17 +229,18 @@ public class UsuariosBD {
     
                 if (results.next()) {
                     // Si existe el usuario valida la contraseña con BCrypt
-                    byte[] passwordHashed = results.getString("password").getBytes(StandardCharsets.UTF_8);
+                    byte[] passwordHashed = results.getString(UsuariosBD.USER_TABLE.PASSWORD.getValue()).getBytes(StandardCharsets.UTF_8);
                     BCrypt.Result resultStrict = BCrypt.verifyer(BCrypt.Version.VERSION_2Y).verifyStrict(
                             password.getBytes(StandardCharsets.UTF_8),
                             passwordHashed);
                     loginOk = resultStrict.verified;
-                    loginOk = validarHash2Y(password, results.getString("password"));
+                    loginOk = validarHash2Y(password, results.getString(UsuariosBD.USER_TABLE.PASSWORD.getValue()));
                     
                 }
 
                 if (loginOk) {
-                    User user = new User( results.getInt("id"), userName, results.getInt("chips") );
+                    User user = new User( results.getInt(UsuariosBD.USER_TABLE.ID.getValue()), userName, results.getInt(UsuariosBD.USER_TABLE.CHIPS.getValue()) );
+                    user.populateFriendList();
     
                     results.close();
                     statement.close();
@@ -263,35 +289,155 @@ public class UsuariosBD {
         
         
         Connection conexion = Conexion.conectar();
+        PreparedStatement statement = null;
+        ResultSet results = null;
         User user = null;
 
         try {
             String query = "INSERT INTO user (username, password) VALUES (?, ?)";
             String hashedPassword = generarStringHash2Y(password);
             
-            PreparedStatement statement = conexion.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
+            statement = conexion.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
             statement.setString(1, userName);
             statement.setString(2, hashedPassword);
             
             statement.executeUpdate();
 
-            ResultSet results = statement.getGeneratedKeys();
+            results = statement.getGeneratedKeys();
 
             if (results.next()){
                 user = new User(results.getInt(1),userName,0);
             }
 
-            results.close();
-            statement.close();
-            conexion.close();
-            return user;
-
         } 
         catch (SQLException e) {
             e.printStackTrace();
-            //System.out.println("Error al crear el usuario");
-            return null;
         }
+        finally{
+            closeConnection(conexion, statement, results);
+        }
+
+        return user;
+    }
+
+
+
+    public static User addFriend( User user, String friendUserName ){
+            
+        User userFriend = getUserData(friendUserName);
+        
+        if (userFriend != null){
+
+            if (user.hasFriend(userFriend)){
+                System.out.println("Ya tienes agregado al usuario: "+friendUserName);
+            }
+            else{
+                Connection conexion = Conexion.conectar();
+                PreparedStatement statement = null;
+                //ResultSet results = null;
+
+                try {
+                    String query = "INSERT INTO friendships (user_id1,user_id2) VALUES (?, ?)";
+                    
+                    statement = conexion.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
+                    statement.setInt(1, user.getID());
+                    statement.setInt(2, userFriend.getID());
+                    
+                    statement.executeUpdate();
+        
+                    /*results = statement.getGeneratedKeys();
+
+                    if (results.next() == false){
+                        System.out.println("Error");                    
+                    }*/
+        
+                } 
+                catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                finally{
+                    closeConnection(conexion, statement);
+                }
+            }
+
+        }
+
+        return userFriend;
+
+    }
+
+
+
+    private static User getUserData (String userName){
+
+        if (hasUser(userName)){
+
+            String query = "SELECT * FROM "+USERS_TABLE_NAME+" WHERE username COLLATE utf8mb4_bin = ?";
+            Connection conexion = Conexion.conectar();
+            PreparedStatement statement = null;
+            ResultSet results = null;
+
+            User user = null;
+
+            try {
+                statement = conexion.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
+                statement.setString(1, userName);
+                
+                results = statement.executeQuery();
+
+                if (results.next()){
+                    user = new User(results.getInt(1),userName,results.getInt("chips"));
+                }
+
+                return user;
+            } 
+            catch (SQLException e) {
+                e.printStackTrace();
+                return null;
+            }
+            finally{
+                closeConnection(conexion, statement, results);
+            }
+        }
+
+        return null;
+
+    }
+
+
+    private static void closeConnection(Connection conexion, PreparedStatement statement){
+        try {
+            if (conexion != null) {
+                conexion.close();
+            }
+            
+            if (statement != null) {
+                statement.close();
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+    }
+
+    private static void closeConnection(Connection conexion, PreparedStatement statement,ResultSet results){
+        try {
+            if (conexion != null) {
+                conexion.close();
+            }
+            
+            if (statement != null) {
+                statement.close();
+            }
+
+            if (results != null) {
+                results.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
     }
 
 
