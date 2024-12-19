@@ -3,6 +3,8 @@ package fullGambling;
 public class Dice {
 
     private static enum DICE_FACE {
+        TOP("┌─────┐"),
+        BOTTOM("└─────┘"),
         BLANK("│     │"),
         LEFT_DOT("│ •   │"),
         MIDDLE_DOT("│  •  │"),
@@ -23,10 +25,6 @@ public class Dice {
 
     private String top, middle, bottom;
 
-
-
-    // System.out.println("┌─────┐");
-    // System.out.println("└─────┘");
 
     public Dice( int number){
 
@@ -73,4 +71,25 @@ public class Dice {
     }
 
 
+    public String getTop() {
+        return top;
+    }
+
+
+    public String getMiddle() {
+        return middle;
+    }
+
+
+    public String getBottom() {
+        return bottom;
+    }
+
+    public String getTopBorder() {
+        return DICE_FACE.TOP.getValue();
+    }
+
+    public String getBottomBorder() {
+        return DICE_FACE.BOTTOM.getValue();
+    }
 }

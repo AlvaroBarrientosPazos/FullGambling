@@ -1,8 +1,10 @@
 package fullGambling;
 
+import java.util.ArrayList;
+
 public class Room {
 
-    enum GAME_TYPE{
+    public static enum GAME_TYPE{
         ROULETTE(1),
         LOW_ROLL(2);
 
@@ -16,16 +18,28 @@ public class Room {
             return value;
         }
 
+        public static GAME_TYPE fromValue(int value) {
+            for (GAME_TYPE gameType : GAME_TYPE.values()) {
+                if (gameType.getValue() == value) {
+                    return gameType;
+                }
+            }
+            throw new IllegalArgumentException("GAME_TYPE valor Invalido: " + value);
+        }
+
     }
 
-    int id;
-    GAME_TYPE type;
-    String name;
+    private int id;
+    private GAME_TYPE type;
+    private String name;
+    private boolean isPrivate;
+    private ArrayList<User> users = new ArrayList<User>();
 
     // TODO: Multi type game Rooms
-    public Room(int roomId, String roomName){
+    public Room(int roomId, String roomName, GAME_TYPE gameType){
         id = roomId;
         name = roomName;
+        type = gameType;
     }
 
     public int getId() {
@@ -40,7 +54,20 @@ public class Room {
         return name;
     }
 
-    
+    public void populateRoomUsers(){
+    }
 
-    
+    public String getVerboseInfo(){
+        return String.format(
+            "%s [ nombre: %s, juego: %s ]",
+            isPrivate()?"[privada]":"[publica]",
+            name, 
+            type.name().toLowerCase());
+    }
+ 
+    public boolean isPrivate(){
+        return isPrivate;
+    }
+
+
 }

@@ -1,16 +1,23 @@
 package fullGambling;
 
+import java.util.ArrayList;
+
 public class User {
 
     private int id;
     private String name, alias;
-    private User[] friends = new User[0]; //No se cargan los amigos de los amigos del usuario actual.
+    private ArrayList<User> friends = new ArrayList<User>(); //No se cargan los amigos de los amigos del usuario actual.
     
     private int chips;
 
     private int matchesPlayed;
     private int wins;
     private int wRatio;
+
+    // TODO: refactor this properly
+    private int currGuess;
+    private int currBet;
+
 
     private boolean isAdmin = false;
 
@@ -32,7 +39,7 @@ public class User {
         isAdmin = userPermissions;
     }
 
-    public User( int userID, String userName, int userChips, boolean userPermissions, User[] userFriends ){
+    public User( int userID, String userName, int userChips, boolean userPermissions, ArrayList<User> userFriends ){
         this(userID, userName, userChips,userPermissions);
         friends = userFriends;
     }
@@ -65,15 +72,31 @@ public class User {
         alias = userAlias;
     }
 
+    public void setCurrGuess(int currGuess) {
+        this.currGuess = currGuess;
+    }
+
+    public void setCurrBet(int currBet) {
+        this.currBet = currBet;
+    }
+
+    public int getCurrGuess() {
+        return currGuess;
+    }
+
+    public int getCurrBet() {
+        return currBet;
+    }
+
     public int getMatchesPlayed(){
         return matchesPlayed;
     }
 
-    public User[] getFriends(){
+    public ArrayList<User> getFriends(){
         return friends;
     }
 
-    public void setFriends(User[] userFriends){
+    public void setFriends(ArrayList<User> userFriends){
         friends = userFriends;
     }
 
@@ -93,20 +116,15 @@ public class User {
     }
 
     public void appendFriend(User userFriend){
-        User[] newFriends = new User[friends.length + 1];
-        System.arraycopy(friends, 0, newFriends, 0, friends.length);
-
-        newFriends[newFriends.length -1] = userFriend;
-
-        friends = newFriends;
+        friends.add(userFriend);
     }
 
 
-    public void displayFriends(){
+    public void showFriends(){
 
-        for (int i = 0; i < friends.length; i++){
+        for (int i = 0; i < friends.size(); i++){
 
-            System.out.println((i+1)+". "+friends[i].getUserName());
+            System.out.println((i+1)+". "+friends.get(i).getUserName());
         }
     }
 

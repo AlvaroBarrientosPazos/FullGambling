@@ -6,24 +6,26 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-class Conexion {
-    /*
-    // Datos de conexión a la base de datos de Desarrollo (localhost)
-    static final String HOST = "localhost";
-    static final String DATABASE = "compartirviaje";
-    static final String USER = "root";
-    static final String PASSWORD = "";
-    static final String PORT = "3306";
-    */ 
+import fullGambling.Util;
 
-    // Base de datos de Producción (filess.io)
+class Conexion {
+
+    ///*// Base de datos de Producción (filess.io)
     static final String HOST = "7ce-h.h.filess.io";
     static final String DATABASE = "GambleApp_alphabetgo";
     static final String USER = "GambleApp_alphabetgo";
     static final String PASSWORD = "f5af64d6ee29ad25dda953a6bae1ebd758c24b00";
+    //*/
+    /* 
+    static final String HOST = "3mazn.h.filess.io";
+    static final String DATABASE = "FullGamba_comingkind";
+    static final String USER = "FullGamba_comingkind";
+    static final String PASSWORD = "8e0cd6e25b70c8ff35d14565b3dd62207a98d60a";
+    //*/
     static final String PORT = "3305";
  
 
+    public static Connection conexion;
 
     /**
      * Conecta con la base de datos
@@ -44,6 +46,7 @@ class Conexion {
         return con;
     }
 
+
     public static void closeConnection(Connection conexion, PreparedStatement statement) {
         try {
             if (conexion != null) {
@@ -55,7 +58,7 @@ class Conexion {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         }
 
     }
@@ -75,20 +78,10 @@ class Conexion {
                 results.close();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         }
 
     }
 
 
 }
-
-
-/*
- * // Datos de conexión a la base de datos (freedb.tech)
- * static final String HOST = "sql.freedb.tech";
- * static final String DATABASE = "freedb_dam12425";
- * static final String USER = "freedb_dam12425";
- * static final String PASSWORD = "N6ynS8#UsHUKRpG";
- * static final String PORT = "3306";
- */

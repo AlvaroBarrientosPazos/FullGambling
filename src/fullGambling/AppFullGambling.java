@@ -1,13 +1,15 @@
+// 87+271+195+478+916+96+74+131+162 = 2410 lineas de codigo.
+
 package fullGambling;
 
-import java.nio.charset.StandardCharsets;
-import java.util.InputMismatchException;
-import java.util.Scanner;
+import java.io.Console;
+import java.util.ArrayList;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import fullGambling.bd.GameManager;
-import fullGambling.bd.UsuariosBD;
-import fullGambling.Dice;
+import fullGambling.bd.RoomsDB;
+import fullGambling.bd.UsersBD;
+import fullGambling.Util;
+import fullGambling.Room.GAME_TYPE;
 
 public class AppFullGambling {
 
@@ -18,34 +20,40 @@ public class AppFullGambling {
         PROFILE_MENU;
     }
 
-    static enum OS{
-        WINDOWS,
-        LINUX_MAC,
-        OTHERS;
-    }
-
-    private static OS systemOS;
-
     private static User currUser;
-    private static Scanner sc = new Scanner(System.in);;
-    
+
 
     public static void main(String[] args) {
-        getSystemOS();
+        Util.getHardwareOS();
         mainMenu();
-
+        Util.scanner.close();
     }
+
+
+    private static void tittleLogoScreen(){
+        Util.clearScreen();
+        System.out.println("     _.--------,..");
+        System.out.println("   ;:____________ `--,_");
+        System.out.println("  (_.-(o)-,-,-.. `''--,_");
+        System.out.println("    ''-.__)_)_,'`\\");
+        System.out.println("        /||//| )-;");
+        System.out.println("        ||\\ |/");
+        System.out.println("        '' ' ");
+
+        System.out.println("  - FullGamba v.0.1a -\n");
+    }
+
 
     private static void mainMenu() {
 
         int userInput = 0;
 
         do {
-            tittleBox("Full Gambling v.0.1",2);
-            System.out.println("1. Iniciar Sesión");
+            tittleLogoScreen();
+            System.out.println("1. Iniciar sesión");
             System.out.println("2. Crear usuario");
             System.out.println("0. Salir");
-            userInput = inputInt();
+            userInput = Util.inputInt();
 
             switch (userInput) {
 
@@ -58,13 +66,13 @@ public class AppFullGambling {
                     break;
 
                 case 0:
-                    clearScreen();
+                    Util.scanner.close();    
+                    Util.clearScreen();
                     System.out.println("Hasta pronto");
-                    sc.close();
                     return;
 
                 default:
-                    clearScreen();
+                Util.clearScreen();
                     System.out.println("Opción invalida");
                     break;
             }
@@ -80,29 +88,26 @@ public class AppFullGambling {
             }
 
         } while (userInput != 0);
-        
-        sc.close();
-
     }
 
 
     private static void LogInMenu() {
         
-    String userName, password;
+        String userName, password;
 
         do {
-            clearScreen();
+            Util.clearScreen();
             System.out.println("Iniciando Sesión");
             System.out.println("----------------------------------------");
             System.out.print("Usuario: ");
-            userName = System.console().readLine();
-
+            userName = Util.scanner.nextLine();
             System.out.print("Contraseña: ");
             password = new String(System.console().readPassword());
 
-            currUser = UsuariosBD.ProcessUserLogin(userName, password);
+            currUser = UsersBD.ProcessUserLogin(userName, password);
 
         } while (currUser == null);
+        
     }
 
 
@@ -118,12 +123,12 @@ public class AppFullGambling {
                 System.out.print("Contraseña: ");
                 password = new String(System.console().readPassword());
         
-                if (UsuariosBD.hasUser(userName) != -1) {
+                if (UsersBD.hasUser(userName) != -1) {
                     System.out.println("El nombre de usuario " + userName + " no está disponible.");
                 }
 
-                else if (UsuariosBD.createUser(userName, password)){
-                    currUser = UsuariosBD.ProcessUserLogin(userName, password);
+                else if (UsersBD.insertUser(userName, password)){
+                    currUser = UsersBD.ProcessUserLogin(userName, password);
                 }
                 
             } while (currUser == null);
@@ -136,20 +141,20 @@ public class AppFullGambling {
         do {
             tittleBox("Menu de Administrador",2);
             System.out.println("Admin: " + currUser.getUserName() + "\n");
-            System.out.println("1. Partidas");
+            System.out.println("1. Salas");
             System.out.println("2. Usuarios");
-            System.out.println("0. Cerrar Sesión");
-            userInput = inputInt();
+            System.out.println("0. Cerrar sesión");
+            userInput = Util.inputInt();
 
             System.out.println();
 
             switch (userInput) {
                 case 1:
-                    GameManager.adminRoomManager();
+                    adminRoomManager();
                     break;
 
                 case 2:
-                    chipsShop();
+                    adminUserManager();
                     break;
 
                 case 0:
@@ -157,7 +162,8 @@ public class AppFullGambling {
                     return;
 
                 default:
-                    System.out.println("Opción invalida");
+                    Util.warning("[ Opción invalida ]");
+                    break;
             }
         } while (userInput != 0);
 
@@ -170,13 +176,14 @@ public class AppFullGambling {
 
         do {
             tittleBox("Menu de Usuario",2);
-            System.out.println("Usuario: " + currUser.getUserName() + "\n");
+            System.out.println("Usuario: " + currUser.getUserName());
+            System.out.println("Nº Fichas: " + currUser.getChips() + "c\n");
             System.out.println("1. Jugar");
             System.out.println("2. Tienda de fichas");
             System.out.println("3. Amigos");
-            System.out.println("4. Confirgurar Perfil");
-            System.out.println("0. Cerrar Sesión");
-            userInput = inputInt();
+            System.out.println("4. Confirgurar perfil");
+            System.out.println("0. Cerrar sesión");
+            userInput = Util.inputInt();
 
             System.out.println();
 
@@ -202,7 +209,8 @@ public class AppFullGambling {
                     return;
 
                 default:
-                    System.out.println("Opción invalida");
+                    Util.warning("[ Opción invalida ]");
+                    break;
             }
         } while (userInput != 0);
 
@@ -218,26 +226,32 @@ public class AppFullGambling {
             System.out.println("Nº Fichas: " + currUser.getChips() + "\n");
             System.out.println("1. Ruleta");
             System.out.println("2. Low Roll");
-            System.out.println("0. Volver Atrás");
+            System.out.println("3. Salas");
+            System.out.println("0. Volver atrás");
 
-            userInput = inputInt();
+            userInput = Util.inputInt();
 
             System.out.println();
 
             switch (userInput) {
                 case 1:
-                    System.out.println("Ruleta");
+                Util.warning("Ruleta\nEsta funcionalidad aún no ha sido implementada");
+
                     break;
 
                 case 2:
                     lowRollGame(currUser);
                     break;
 
+                case 3:
+                    roomSelectionMenu();
+                    break;
+
                 case 0:
                     return;
 
                 default:
-                    System.out.println("Opción invalida");
+                    Util.warning("[ Opción invalida ]");
             }
         } while (userInput != 0);
         
@@ -258,15 +272,123 @@ public class AppFullGambling {
             sides+="*";
         }
         
-        clearScreen();
+        Util.clearScreen();
         System.out.println(border+sides+" "+text+" "+sides+"\n"+border);
     }
 
     private static void lowRollGame(User user){
+        
+        int userInput;
+        Room room = null;
+
         do{
             tittleBox("Low Roll",3);
+            System.out.println("Nº Fichas: " + currUser.getChips() + "\n");
+            System.out.println("1. Buscar sala");
+            System.out.println("2. Crear sala");
+            System.out.println("3. Reglas");
+            System.out.println("0. Volver atrás");
+
+            userInput = Util.inputInt();
+
+            switch (userInput) {
+                case 1:
+                    System.out.println("Buscando sala...");
+                    roomSelectionMenu(GAME_TYPE.LOW_ROLL);
+                    break;
+
+                case 2:
+                    Util.clearScreen();
+                    System.out.println("Creando Sala");
+                    System.out.println("----------------------------------------");
+                    
+                    System.out.print("Nombre: ");
+                    String RoomName = Util.scanner.nextLine();
+                    String RoomPassword = null;
+
+                    if (confirmationPopUp("[ ¿Quieres ponerle una contraseña a la sala? ]")){
+                        System.out.print("Contraseña: ");
+                        RoomPassword = new String(System.console().readPassword());
+                    }
+                    
+                    room = RoomsDB.createRoom(RoomName, RoomPassword, Room.GAME_TYPE.LOW_ROLL);
+                    playLowRoll(room);
+                    break;
+
+                case 3:
+                    Util.clearScreen();
+                    System.out.println("Low Roll Reglas");
+                    System.out.println("----------------------------------------");
+                    System.out.println("\nLos participantes deberán apostar una cantidad de fichas al valor más bajo que va a salir en 3 tiradas de dados de 6 caras");
+                    System.out.println("gana el participante que haya apostado por el número más grande sin llegar a superar el valor de la mínima tirada de dados");
+                    System.out.println("ganar con una apuesta al 6 significa llevarse el bote entero y ganar con una apuesta al 1 solo permite recuperar lo invertido");
+                    System.out.println("Si existen varios ganadores con el mismo número el bote se repartida por igual entre los ganadores.");
+                    System.out.println();
+                    Util.awaitUserToContinue();
+                    break;
+
+                case 0:
+                    return;
+
+                default:
+                    System.out.println("[ Opción invalida ]");
+                    break;
+            }
 
         }while(true);
+    }
+
+
+    private static boolean playLowRoll(Room room){
+
+        int userBet   = -1;
+        int userGuess = -1;
+        boolean opSucessful = false;
+
+        do {
+            tittleBox("Low Roll", 2);
+            System.out.println("Nº Fichas: "+currUser.getChips());
+            System.out.print("\n[ Introduce la cantidad que quieres apostar ]");
+            System.out.print("\nApuesta: ");
+            userBet = Util.inputInt(false);
+
+            if (currUser.getChips() < userBet){
+                Util.warning("[ No tienes suficientes fichas ]");
+                if (confirmationPopUp("[ ¿Quieres comprar más fichas? ]")){
+                    buyChips();
+                }
+                userBet=-1;
+            }
+            else{
+                UsersBD.updateChips(currUser, currUser.getChips()-userBet);
+            }
+
+        }while(userBet==-1);
+
+        do{
+            tittleBox("Low Roll", 2);
+            System.out.print("\n[ El número de dado al que quieres apostar ]");
+            
+            System.out.print("\nNúmero: ");
+            userGuess = Util.inputInt(false);
+
+            if (userGuess < 1 || userGuess > 6){
+                tittleBox("Low Roll", 2);
+                System.out.println("\n[ Introduce un valor valido para un dado de 6 caras ]");
+                Util.awaitUserToContinue();
+            }
+
+        }while(userGuess==-1);
+
+        if ( RoomsDB.insertUserToRoom(currUser, room.getId(), userBet, userGuess) ){
+            Util.warning( String.format("Has apostado %dc al número %d\n¡Buena suerte!\n", userBet, userGuess ) );
+            opSucessful = true;
+        }
+        else{
+            Util.warning("Error: No se ha podido procesar la apuesta");
+        }
+
+        return opSucessful;
     }
 
 
@@ -278,9 +400,9 @@ public class AppFullGambling {
             System.out.println("Nº Fichas: " + currUser.getChips() + "\n");
             System.out.println("1. Comprar");
             System.out.println("2. Retirar");
-            System.out.println("0. Volver Atrás");
+            System.out.println("0. Volver atrás");
 
-            userInput = inputInt();
+            userInput = Util.inputInt();
 
             switch (userInput) {
                 case 1:
@@ -300,17 +422,17 @@ public class AppFullGambling {
             }
 
         }while(true);
-
-
     }
 
+    
     private static void buyChips(){
         
-        clearScreen();
+        Util.clearScreen();
         
         int userInput = -1, quantity = 0;
 
         do{
+            Util.clearScreen();
             System.out.println("Comprar Fichas");
             System.out.println("----------------------------------------");
             System.out.println("Nº Fichas: " + currUser.getChips() + "\n");
@@ -321,7 +443,7 @@ public class AppFullGambling {
             System.out.println("5. 100€\t(1500c) +50%!!");
             System.out.println("0. Volver Atrás");
 
-            userInput = inputInt();
+            userInput = Util.inputInt();
 
             if (userInput == 0) {
                 return;
@@ -330,9 +452,9 @@ public class AppFullGambling {
             quantity = switch (userInput) {
                 case 1 -> 5 * 10;
 
-                case 2 -> 5 * 10;
+                case 2 -> 10 * 10;
 
-                case 3 -> 5 * 10;
+                case 3 -> 25 * 10;
 
                 case 4 -> (int)(50 * 10 * 1.2);  
 
@@ -345,7 +467,12 @@ public class AppFullGambling {
                     
             };
 
-            UsuariosBD.updateChips(currUser, quantity);
+            boolean opCompleted = UsersBD.updateChips(currUser, currUser.getChips()+quantity);
+
+            if (opCompleted){
+                Util.warning("¡Compra confirmada!");
+            }
+
 
         }while (userInput != 0);
 
@@ -364,7 +491,7 @@ public class AppFullGambling {
         int userInput;
 
         do {
-            clearScreen();
+            Util.clearScreen();
             System.out.println("*****************************");
             System.out.println("** Configuración de Perfil **");
             System.out.println("*****************************");
@@ -373,14 +500,16 @@ public class AppFullGambling {
             System.out.println("2. Tienda de Fichas");
             System.out.println("3. Lista de Amigos");
             System.out.println("4. Configurar Perfil");
-            System.out.println("0. Volver Atrás");
-            userInput = inputInt();
+            System.out.println("0. Volver atrás");
+            userInput = Util.inputInt();
 
             System.out.println();
 
             switch (userInput) {
                 case 1:
                     System.out.println("Cambiando Apodo...");
+                    System.out.println("Esta función aún no ha sido implementada, lo sentimos por las molestias");
+                    Util.awaitUserToContinue();
                     break;
 
                 case 2:
@@ -389,13 +518,13 @@ public class AppFullGambling {
 
                 case 3:
                     friendsMenu();
-                    currUser.displayFriends();
-                    // solicitarAsiento(userName);
+                    currUser.showFriends();
                     break;
 
                 case 4:
                     System.out.println("Configurando Perfil...");
-                    // solicitarAsiento(userName);
+                    System.out.println("Esta función aún no ha sido implementada, lo sentimos por las molestias");
+                    Util.awaitUserToContinue();
                     break;
 
                 case 0:
@@ -404,41 +533,41 @@ public class AppFullGambling {
 
                 default:
                     System.out.println("Opción invalida");
+                    Util.awaitUserToContinue();
+                    break;
             }
         } while (userInput != 0);
     }
 
 
     private static void friendsMenu(){
-        int choiceId;
+        int userInput;
 
         do {
-            clearScreen();
+            Util.clearScreen();
             System.out.println("*********************");
             System.out.println("** Lista de Amigos **");
             System.out.println("*********************");
 
-            
-
             System.out.println("------------------------------------------------------------");
 
-            if (currUser.getFriends().length == 0){
+            if (currUser.getFriends().isEmpty()){
                 System.out.println("Aún no has añadido a ningún usuario a tu lista de amigos");
             }
             else{
-                currUser.displayFriends();
+                currUser.showFriends();
             }
-            
+
             System.out.println("------------------------------------------------------------");
         
-            System.out.println("\n1. Añadir Amigo");
-            System.out.println("2. Borrar Amigo");
-            System.out.println("0. Volver Atrás");
-            choiceId = inputInt();
+            System.out.println("\n1. Añadir");
+            System.out.println("2. Borrar");
+            System.out.println("0. Volver atrás");
+            userInput = Util.inputInt();
 
             System.out.println();
 
-            switch (choiceId) {
+            switch (userInput) {
                 case 1:
                     friendRequest();
                     break;
@@ -451,59 +580,282 @@ public class AppFullGambling {
                     return;
 
                 default:
+                    Util.warning("La opción seleccionada no es valida");
+                    break;
+            }
+
+        } while(userInput!=0);
+
+    }
+
+
+    public static void adminRoomManager(){
+
+        int userInput = -1;
+
+        ArrayList<Room> rooms;
+        Room room = null;
+
+        do{
+            Util.clearScreen();
+            System.out.println("------------------------------------------------------------");
+            rooms = GameManager.DBActiveRooms();
+            if (rooms.isEmpty()){
+                System.out.println("  No se han encontrado salas activas");
+            }
+            System.out.println("------------------------------------------------------------");
+
+            System.out.println("\n[ Entra introduciendo el número de la sala ]\n");
+            System.out.println("0. Volver atrás");
+            
+            userInput = Util.inputInt();
+
+            System.out.println();
+
+            if (userInput == 0){
+                return;
+            }
+
+            userInput-=1;
+
+            if (userInput < 0 || userInput >= rooms.size()){
+                System.out.println("La opción seleccionada no es valida");
+            }
+            else{
+                    GameManager.adminExecuteGame(rooms.get(userInput));
+                }
+
+        } while(userInput!=0);
+
+    }
+
+    
+    public static void roomSelectionMenu(){
+        
+        int userInput = -1;
+
+        ArrayList<Room> rooms;
+        Room room = null;
+
+        do{
+            Util.clearScreen();
+            System.out.println("------------------------------------------------------------");
+            rooms = GameManager.DBActiveRooms();
+            if (rooms.isEmpty()){
+                System.out.println("  No se han encontrado salas activas");
+            }
+            System.out.println("------------------------------------------------------------");
+
+            System.out.println("\n[ Entra introduciendo el número de la sala ]\n");
+            System.out.println("0. Volver atrás");
+            
+            userInput = Util.inputInt();
+
+            System.out.println();
+
+            if (userInput == 0){
+                return;
+            }
+
+            userInput-=1;
+
+            if (userInput < 0 || userInput >= rooms.size()){
+                System.out.println("La opción seleccionada no es valida");
+            }
+            else{
+                room = rooms.get(userInput);
+
+                if (RoomsDB.hasRelationship(currUser,room)){
+                    Util.warning("Ya has realizado una apuesta en esta sala");
+                }
+                else if (room.isPrivate()){
+                    Util.clearScreen();
+                    System.out.println("Contraseña: ");
+                }
+                else{
+                    playRoomGame(room);
+                }
+
+            }
+
+        } while(userInput!=0);
+
+    }
+
+
+    public static void roomSelectionMenu(GAME_TYPE gameType){
+        
+        int userInput = -1;
+
+        ArrayList<Room> rooms;
+        Room room = null;
+
+        do{
+            Util.clearScreen();
+            System.out.println("------------------------------------------------------------");
+            rooms = GameManager.DBActiveRooms(gameType);
+            System.out.println("------------------------------------------------------------");
+
+            System.out.println("\n[ Entra introduciendo el número de la sala ]\n");
+            System.out.println("0. Volver atrás");
+            
+            userInput = Util.inputInt();
+
+            System.out.println();
+
+            if (userInput == 0){
+                return;
+            }
+
+            else if (userInput < 0 || userInput-1 >= rooms.size()){
+                System.out.println("La opción seleccionada no es valida");
+            }
+            else{
+                room = rooms.get(userInput-1);
+
+                if (room.isPrivate()){
+                    Util.clearScreen();
+                    System.out.println("Contraseña: ");
+                }
+                else{
+                    playRoomGame(room);
+                }
+
+            }
+
+        } while(userInput!=0);
+
+    }
+
+
+    public static void playRoomGame(Room room){
+        switch (room.getType()) {
+            case Room.GAME_TYPE.ROULETTE:
+                break;
+
+            case Room.GAME_TYPE.LOW_ROLL:
+                playLowRoll(room);
+                break;
+        
+            default:
+                break;
+        }
+    }
+        
+
+
+    public static void showRooms(ArrayList<Room> rooms){
+        
+        if (rooms.isEmpty()){
+            Util.warning("No se han encontrado salas activas");
+        }
+        else{
+
+            for (int i = 0 ;i < rooms.size(); i++) {
+                System.out.println(i+". "+rooms.get(i).getVerboseInfo());
+            }
+        }
+    }
+
+
+    private static void adminUserManager(){
+        
+        int userInput;
+
+        do {
+            Util.clearScreen();
+            System.out.println("------------------------------------------------------------");
+            UsersBD.showUsers();
+            System.out.println("------------------------------------------------------------");
+        
+            System.out.println("\n1. Cambiar Permisos");
+            System.out.println("2. Cambiar nombre");
+            System.out.println("3. Cambiar fichas");
+            System.out.println("4. Cambiar estado de penalizacion");
+            System.out.println("5. Borrar usuario");
+            System.out.println("0. Volver atrás");
+            userInput = Util.inputInt();
+
+            System.out.println();
+
+            switch (userInput) {
+                case 1:
+                    System.out.println("Cambiando Permisos...");
+                    break;
+
+                case 2:
+                    System.out.println("Cambiando Nombre...");
+                    break;
+
+                case 3:
+                    System.out.println("Cambiando Fichas...");
+                    break;
+
+                case 4:
+                    System.out.println("Cambiando Penalización...");
+                    break;
+
+                case 5:
+                    System.out.println("Cambiando Borrar Usuario...");
+                    break;
+
+                case 0:
+                    return;
+
+                default:
                     System.out.println("La opción seleccionada no es valida");
                     break;
             }
 
-        } while(choiceId!=0);
+        } while(userInput!=0);
 
     }
 
 
     private static void friendRequest(){
-        clearScreen();
-        System.out.println("Añadiendo Amigo...");
+        Util.clearScreen();
+        System.out.println("Añadiendo Amigo");
         System.out.println("----------------------------------------");
         System.out.print("Nombre del usuario: ");
         
-        //sc.nextLine();
-        String friendName = sc.nextLine(); // Se usa para imprimir el nombre del usuario introducido aunq no exista.
-        User friendUser = UsuariosBD.addFriend(currUser,friendName);
+        String friendName = System.console().readLine(); // Se usa para imprimir el nombre del usuario introducido aunq no exista.
+        User friendUser = UsersBD.addFriend(currUser,friendName);
         
         if (friendUser != null){
             System.out.println("[ Has agregado a "+friendUser.getUserName()+" a tu lista de amigos ]");
         }
         else{
             System.out.println("\nEl usuario "+friendName+" no existe");
+            Util.awaitUserToContinue();
         }
-
-
     }
 
+
     private static void removeFriend(){
-        clearScreen();
-        System.out.println("Borrando Amigo...");
+        Util.clearScreen();
+        System.out.println("Borrando Amigo");
         System.out.println("----------------------------------------");
 
-        User[] friends = currUser.getFriends();
+        ArrayList<User> friends = currUser.getFriends();
 
         int friendPos = -1;
 
         do {
             System.out.println("------------------------------------------------------------");
-            currUser.displayFriends();
+            currUser.showFriends();
             System.out.println("------------------------------------------------------------");
 
 
             System.out.println("Selecciona la posición del amigo que deseas eliminar\n( 0. Cancelar ) ");
-            friendPos = inputInt();
+            friendPos = Util.inputInt();
             friendPos-=1;
 
             if (friendPos == -1){
                 return;
             }
-            else if (friendPos >= friends.length){
+            else if (friendPos >= friends.size()){
                 System.out.println("La posicion selecionada no es valida.");
+                Util.awaitUserToContinue();
             }
 
             else{
@@ -513,33 +865,28 @@ public class AppFullGambling {
         }while(true);
 
         
-        String removedFriendName = friends[friendPos].getUserName();
+        String removedFriendName = friends.get(friendPos).getUserName();
 
         boolean confirmation = confirmationPopUp("[ ¿Estás seguro de que quieres eliminar al usuario: "+removedFriendName+"? ]");
 
         if (confirmation){
             
-            boolean deleteOk = UsuariosBD.deleteUserFriend(currUser,friends[friendPos]);
+            boolean deleteOk = UsersBD.deleteUserFriend(currUser,friends.get(friendPos));
 
             if (deleteOk){
-                User[] newFriends = new User[friends.length-1];
+                friends.remove(friendPos);
 
-                System.arraycopy(friends, 0, newFriends, 0, friendPos);
-                System.arraycopy(friends, friendPos + 1, newFriends, friendPos, friends.length - friendPos - 1);
-                
-                currUser.setFriends(newFriends);
-        
                 System.out.println("\n[ Has eliminado a "+removedFriendName+" de tu lista de amigos ]");
             }
             else{
-                System.out.println("Algo salio mal");
+                Util.warning("Algo salio mal a la hora de borrar una amistad");
             }
         }
         
     }
 
     private static boolean confirmationPopUp(String msg){
-        clearScreen();
+        Util.clearScreen();
         System.out.println(msg);
         System.out.println("  1. Cancelar");
         System.out.println("  2. Confirmar");
@@ -547,7 +894,7 @@ public class AppFullGambling {
         int input = 0;
 
         do{
-            input = inputInt();
+            input = Util.inputInt();
         
             switch (input) {
                 case 1:
@@ -563,102 +910,6 @@ public class AppFullGambling {
         } while(true);
         
     }
-
-
-    private static int inputInt(){
-        int input = -1;
-        
-        try {
-            input = sc.nextInt();
-            sc.nextLine();
-            
-        }
-        catch (InputMismatchException e) {
-        }
-
-        return input;
-    }
-
-
-    private static void getSystemOS(){
-        String operatingSystem = System.getProperty("os.name").toLowerCase();
-
-        if (operatingSystem.contains("win")) {
-            systemOS = OS.WINDOWS;
-        } 
-        else if (operatingSystem.contains("nix") || operatingSystem.contains("nux") || operatingSystem.contains("mac")) {
-            systemOS = OS.LINUX_MAC;
-        } 
-        else {
-            systemOS = OS.OTHERS;
-        }
-
-    }
-
-    public static void clearScreen() {
-        
-        try{
-            switch (systemOS) {
-                case OS.WINDOWS:
-                    new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-                    break;
-
-                case OS.LINUX_MAC:
-                    new ProcessBuilder("clear").inheritIO().start().waitFor();
-                    break;
-
-                case OS.OTHERS:
-                    System.out.print("\n\n\n\n");
-                    break;
-
-                default:
-                    break;
-            }
-        } 
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-       
-
-    /* 
-    private static void publicarViaje(String usuario) {
-        System.out.print("Escribe la fecha y hora del viaje (AAAA-MM-DD HH:MM): ");
-        String fechaHora = sc.nextLine();
-        System.out.print("Lugar de origen: ");
-        String origen = sc.nextLine();
-        System.out.print("Lugar de destino: ");
-        String destino = sc.nextLine();
-        System.out.print("Número de plazas libres: ");
-        int plazas = sc.nextInt();
-        sc.nextLine();
-
-        if (ViajesBD.crearViaje(usuario, fechaHora, origen, destino, plazas)) {
-            System.out.println("Viaje creado");
-        } else {
-            System.out.println("Error al crear el viaje");
-        }
-    }
-
-    private static void solicitarAsiento(String usuario) {
-        int numViajesProximos = ViajesBD.listarProximosViajesConPlazas();
-        if (numViajesProximos > 0) {
-            System.out.print("Indica el ID del viaje que quieres solicitar: ");
-            int numViaje = sc.nextInt();
-            sc.nextLine();
-            if (ViajesBD.anhadirPasajero(numViaje, usuario)) {
-                System.out.println("Asiento solicitado");
-            } else {
-                System.out.println("Error al solicitar el asiento");
-            }
-        } else {
-            System.out.println("No hay viajes próximos con plazas libres");
-        }
-    }
-    */
-
-
 
 }
 

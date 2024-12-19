@@ -1,17 +1,15 @@
 package fullGambling.bd;
 
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import fullGambling.User;
+import fullGambling.Util;
 
-public class UsuariosBD {
+public class UsersBD {
 
     public static enum USER {
         ID(1),
@@ -19,7 +17,8 @@ public class UsuariosBD {
         PASSWORD(3),
         CREATED_AT(4),
         CHIPS(5),
-        PERMISSIONS(6);
+        PERMISSIONS(6),
+        BAN(7);
 
         private final int value;
 
@@ -30,7 +29,6 @@ public class UsuariosBD {
         public int getValue() {
             return value;
         }
-
     }
 
     private static enum USER_COMPLEXITY{
@@ -39,8 +37,8 @@ public class UsuariosBD {
     }
 
 
-    static final String USERS_TABLE_NAME = "user";
-    static final String FRIENDSHIP_TABLE_NAME = "friendships";
+    public static final String USERS_TABLE_NAME = "user";
+    public static final String FRIENDSHIP_TABLE_NAME = "friendships";
 
 
     public static int hasUser(String username) {
@@ -55,7 +53,6 @@ public class UsuariosBD {
         try {
             statement = conexion.prepareStatement(query);
             statement.setString(1, username);
-
             results = statement.executeQuery();
 
             if (results.next()) {
@@ -63,14 +60,14 @@ public class UsuariosBD {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         } finally {
             Conexion.closeConnection(conexion, statement, results);
         }
 
         return userId;
-
     }
+
 
     private static boolean hasUser(int userId) {
         
@@ -92,14 +89,42 @@ public class UsuariosBD {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         } finally {
             Conexion.closeConnection(conexion, statement, results);
         }
 
         return hasUser;
-
     }
+
+    public static User getUserDataById(int userId) {
+        
+        String query = "SELECT * FROM "+USERS_TABLE_NAME+" WHERE id = ?";
+        Connection conexion = Conexion.conectar();
+        PreparedStatement statement = null;
+        ResultSet results = null;
+
+        User user = null;
+
+        try {
+            statement = conexion.prepareStatement(query);
+            statement.setInt(1, userId);
+
+            results = statement.executeQuery();
+
+            if (results.next()) {
+                user = buildUser(userId, results.getString(USER.USER_NAME.getValue()), results.getInt(USER.CHIPS.getValue()), results.getBoolean(USER.PERMISSIONS.getValue()));
+            }
+
+        } catch (SQLException e) {
+            Util.printStackTrace(e);
+        } finally {
+            Conexion.closeConnection(conexion, statement, results);
+        }
+
+        return user;
+    }
+
 
     /**
      * Cambia la contraseña de un usuario
@@ -115,7 +140,7 @@ public class UsuariosBD {
 
         try {
             statement = conexion.prepareStatement("UPDATE "+USERS_TABLE_NAME+" SET password = ? WHERE username LIKE ?");
-            statement.setString(1, generarStringHash2Y(password));
+            statement.setString(1, Util.generarStringHash2Y(password));
             statement.setString(2, username);
 
             if (statement.executeUpdate() == 1) {
@@ -123,7 +148,7 @@ public class UsuariosBD {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         } finally {
             Conexion.closeConnection(conexion, statement);
         }
@@ -131,21 +156,6 @@ public class UsuariosBD {
         return wasPasswordChanged;
     }
 
-    /*
-     * FUNCIONES BCRYPT: generar hash y validar hash
-     */
-    /**
-     * Valida un hash de BCrypt
-     * 
-     * @param password Contraseña en texto claro
-     * @param hash2y   Hash de BCrypt
-     * @return true si la contraseña es correcta
-     */
-    private static boolean validarHash2Y(String password, String hash2y) {
-        return BCrypt.verifyer(BCrypt.Version.VERSION_2Y)
-                .verifyStrict(password.getBytes(StandardCharsets.UTF_8),
-                        hash2y.getBytes(StandardCharsets.UTF_8)).verified;
-    }
 
     public static boolean updateChips(User user, int quantity){
         boolean wereChipsUpdated = false;
@@ -154,16 +164,16 @@ public class UsuariosBD {
 
         try {
             statement = conexion.prepareStatement("UPDATE "+USERS_TABLE_NAME+" SET chips = ? WHERE id LIKE ?");
-            statement.setInt(1, user.getChips()+quantity);
+            statement.setInt(1, quantity);
             statement.setInt(2, user.getID());
 
             if (statement.executeUpdate() == 1) {
                 wereChipsUpdated = true;
-                user.setChips(user.getChips()+quantity);
+                user.setChips(quantity);
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         } finally {
             Conexion.closeConnection(conexion, statement);
         }
@@ -171,27 +181,16 @@ public class UsuariosBD {
         return wereChipsUpdated;
     }
 
-
-    /**
-     * Genera un hash de BCrypt
-     * 
-     * @param password Contraseña en texto claro
-     * @return Hash de BCrypt
-     */
-    private static String generarStringHash2Y(String password) {
-        char[] bcryptChars = BCrypt.with(BCrypt.Version.VERSION_2Y).hashToChar(13, password.toCharArray());
-        return String.valueOf(bcryptChars);
-    }
-
     /**
      * Inicia sesión de usuario
-     * Solicita credenciales de inicio de sesión, y si son correctas devuelve el
-     * nombre de usuario.
-     * 
-     * @return Usuario que ha iniciado sesión
+     * Solicita credenciales de inicio de sesión, y devuelve una boolean 
+     * dependiendo de si la operación fue exitosa o no.
+     *
+     * @param userName Nombre de usuario 
+     * @param password Contraseña
+     * @return loginOk resultado de la operación con el resultado de la operación.
      */
     public static User ProcessUserLogin(String userName, String password) {
-
         String query = "SELECT * FROM "+USERS_TABLE_NAME+" WHERE username COLLATE utf8mb4_bin = ?";
         Connection conexion = Conexion.conectar();
         PreparedStatement statement = null;
@@ -206,23 +205,18 @@ public class UsuariosBD {
             results = statement.executeQuery();
 
             if (results.next()) {
-                byte[] passwordHashed = results.getString(USER.PASSWORD.getValue())
-                        .getBytes(StandardCharsets.UTF_8);
-                BCrypt.Result resultStrict = BCrypt.verifyer(BCrypt.Version.VERSION_2Y).verifyStrict(
-                        password.getBytes(StandardCharsets.UTF_8),
-                        passwordHashed);
-                loginOk = resultStrict.verified;
-                loginOk = validarHash2Y(password, results.getString(USER.PASSWORD.getValue()));
+                loginOk = Util.verifyPassword(password,results);
             }
 
             if (loginOk) {
                 user = buildUserByComplexity(null, results, USER_COMPLEXITY.HIGH);
                 populateUserFriends(user, conexion, statement, results);
+
             } else {
-                System.out.println("Usuario o contraseña incorrectos");
+                Util.warning("Usuario o contraseña incorrectos");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         }
         finally{
             Conexion.closeConnection(conexion, statement,results);
@@ -259,7 +253,7 @@ public class UsuariosBD {
             }
         }
         catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         }
     }
 
@@ -292,13 +286,14 @@ public class UsuariosBD {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         } finally {
             Conexion.closeConnection(conexion, statement);
         }
 
         return wasFriendDeleted;
     }
+
 
     /**
      * Crea un nuevo usuario
@@ -307,7 +302,7 @@ public class UsuariosBD {
      * 
      * @return el nombre si se creó el usuario
      */
-    public static boolean createUser(String userName, String password) {
+    public static boolean insertUser(String userName, String password) {
 
         Connection conexion = Conexion.conectar();
         PreparedStatement statement = null;
@@ -317,7 +312,7 @@ public class UsuariosBD {
 
         try {
             String query = "INSERT INTO "+USERS_TABLE_NAME+" (username, password) VALUES (?, ?)";
-            String hashedPassword = generarStringHash2Y(password);
+            String hashedPassword = Util.generarStringHash2Y(password);
 
             statement = conexion.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
             statement.setString(1, userName);
@@ -332,7 +327,7 @@ public class UsuariosBD {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         } finally {
             Conexion.closeConnection(conexion, statement, results);
         }
@@ -374,17 +369,16 @@ public class UsuariosBD {
                     }
 
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    Util.printStackTrace(e);
                 } finally {
                     Conexion.closeConnection(conexion, statement);
                 }
             }
-
         }
 
         return userFriend;
-
     }
+
 
     private static User getUserData(User user, String userName) {
 
@@ -397,6 +391,7 @@ public class UsuariosBD {
         return user;
 
     }
+
 
     private static User getUserData( User user, int userId, USER_COMPLEXITY userComplexity) {
 
@@ -415,7 +410,7 @@ public class UsuariosBD {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         } finally {
             Conexion.closeConnection(conexion, statement, results);
         }
@@ -433,7 +428,7 @@ public class UsuariosBD {
             };
         }
         catch(SQLException e){
-            e.printStackTrace();
+            Util.printStackTrace(e);
         }
         return user;
     }
@@ -449,7 +444,7 @@ public class UsuariosBD {
     /**
      * Lista los usuarios de la base de datos
      */
-    public static void listarUsuarios() {
+    public static void showUsers() {
         Connection conexion = Conexion.conectar();
         ResultSet results = null;
         PreparedStatement statement = null;
@@ -473,7 +468,7 @@ public class UsuariosBD {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Util.printStackTrace(e);
         } finally {
             Conexion.closeConnection(conexion, statement, results);
         }
